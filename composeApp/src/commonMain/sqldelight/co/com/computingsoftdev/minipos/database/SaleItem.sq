@@ -1,0 +1,27 @@
+-- SaleItem.sq
+
+CREATE TABLE SaleItem (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    saleId INTEGER NOT NULL,
+    productId INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    subtotal INTEGER NOT NULL,
+    FOREIGN KEY(saleId) REFERENCES Sale(id),
+    FOREIGN KEY(productId) REFERENCES Product(id)
+);
+
+-- Queries para SaleItem
+selectItemsBySale:
+SELECT * FROM SaleItem WHERE saleId = ?;
+
+insertSaleItem:
+INSERT INTO SaleItem(saleId, productId, quantity, subtotal)
+VALUES (?, ?, ?, ?);
+
+updateSaleItem:
+UPDATE SaleItem
+SET quantity = ?, subtotal = ?
+WHERE id = ?;
+
+deleteItemsBySale:
+DELETE FROM SaleItem WHERE saleId = ?;

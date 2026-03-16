@@ -1,0 +1,27 @@
+-- Sale.sq
+
+CREATE TABLE Sale (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    date INTEGER NOT NULL,
+    total INTEGER NOT NULL
+);
+
+-- Queries para Sale
+selectAllSales:
+SELECT * FROM Sale;
+
+selectSaleById:
+SELECT * FROM Sale WHERE id = ?;
+
+insertSale:
+INSERT INTO Sale(date, total)
+VALUES (?,  ?);
+
+updateSale:
+UPDATE Sale
+SET date = ?, total = ?
+WHERE id = ?;
+
+deleteSale:
+DELETE FROM Sale
+WHERE id = ?;

@@ -1,0 +1,28 @@
+-- Product.sq
+
+CREATE TABLE Product (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    price INTEGER NOT NULL,
+    description TEXT
+);
+
+-- Queries para Product
+selectAllProducts:
+SELECT * FROM Product;
+
+selectProductById:
+SELECT * FROM Product WHERE id = ?;
+
+insertProduct:
+INSERT INTO Product(name, price, description)
+VALUES (?, ?, ?);
+
+updateProduct:
+UPDATE Product
+SET name = ?, price = ?, description = ?
+WHERE id = ?;
+
+deleteProduct:
+DELETE FROM Product
+WHERE id = ?;
