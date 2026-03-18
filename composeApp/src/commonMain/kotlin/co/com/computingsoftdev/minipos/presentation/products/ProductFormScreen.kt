@@ -7,40 +7,101 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import co.com.computingsoftdev.minipos.domain.model.Product
 
 @Composable
 fun ProductFormScreen(
-    viewModel: ProductViewModel,
-    onSaved: () -> Unit
+    productViewModel: ProductViewModel,
+    product: Product? = null,
+    onBack: () -> Unit
 ) {
+
     var name by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        TextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") })
+    LaunchedEffect(product) {
+        name = product?.name ?: ""
+        price = product?.price?.toString() ?: ""
+        description = product?.description ?: ""
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+
+        Text(
+            text = if(product == null) "Nuevo Producto" else "Editar Producto",
+            style = MaterialTheme.typography.titleLarge
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Nombre") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(
+
+        OutlinedTextField(
             value = price,
             onValueChange = { price = it },
             label = { Text("Precio") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            modifier = Modifier.fillMaxWidth()
         )
+
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(value = description, onValueChange = { description = it }, label = { Text("Descripción") })
+
+        OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text("Descripción") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {
-            viewModel.addProduct(
-                name = name,
-                price = price.toLongOrNull() ?: 0L,
-                description = description.takeIf { it.isNotBlank() }
-            )
-            name = ""
-            price = ""
-            description = ""
-            onSaved() // Volver a la lista
-        }) {
-            Text("Guardar Producto")
+
+        Button(
+            onClick = {
+                val priceLong = price.toLongOrNull()
+
+                if (name.isBlank() || priceLong == null) {
+                    return@Button
+                }
+
+                if(product == null){
+                    productViewModel.addProduct(
+                        name = name,
+                        price = priceLong,
+                        description = description
+                    )
+                }else{
+                    productViewModel.updateProduct(
+                        product.copy(
+                            name = name,
+                            price = priceLong,
+                            description = description
+                        )
+                    )
+                }
+                onBack()
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(if (product == null) "Guardar" else "Actualizar")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 🔙 Cancelar
+        TextButton(
+            onClick = { onBack() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Cancelar")
         }
     }
 }

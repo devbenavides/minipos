@@ -8,6 +8,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import co.com.computingsoftdev.minipos.domain.model.Product
+import co.com.computingsoftdev.minipos.presentation.navigation.Screen
 import co.com.computingsoftdev.minipos.presentation.products.ProductFormScreen
 import co.com.computingsoftdev.minipos.presentation.products.ProductScreen
 import co.com.computingsoftdev.minipos.presentation.products.ProductViewModel
@@ -20,7 +22,8 @@ fun App(
     saleViewModel: SaleViewModel
 ) {
 
-    var currentScreen by remember { mutableStateOf("products") }
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.Products) }
+    var selectedProduct by remember { mutableStateOf<Product?>(null) }
 
     MaterialTheme {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -29,29 +32,40 @@ fun App(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Button(onClick = { currentScreen = "products" }) { Text("Productos") }
-                Button(onClick = { currentScreen = "sale" }) { Text("Nueva Venta") }
+                Button(onClick = { currentScreen = Screen.Products }) { Text("Productos") }
+                Button(onClick = { currentScreen = Screen.Sale }) { Text("Nueva Venta") }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             when (currentScreen) {
-                "products" -> {
+                Screen.Products -> {
                     // Muestra la lista y permite agregar productos
-                    ProductScreen(productViewModel = productViewModel, saleViewModel = saleViewModel) {
-                        // callback para ir al formulario
-                        currentScreen = "add_product"
-                    }
+                    ProductScreen(
+                        productViewModel = productViewModel,
+                        saleViewModel = saleViewModel,
+                        onAddProductClick = {
+                            selectedProduct = null
+                            currentScreen = Screen.AddProduct
+                        },
+                        onEditProductClick = {
+                            selectedProduct = it
+                            currentScreen = Screen.AddProduct
+                        }
+                    )
                 }
 
-                "add_product" -> {
-                    ProductFormScreen(viewModel = productViewModel) {
-                        // callback para volver a la lista
-                        currentScreen = "products"
-                    }
+                Screen.AddProduct -> {
+                    ProductFormScreen(
+                        productViewModel = productViewModel,
+                        product = selectedProduct,
+                        onBack = {
+                            currentScreen = Screen.Products
+                        }
+                    )
                 }
 
-                "sale" -> {
+                Screen.Sale -> {
                     SaleScreen(saleViewModel)
                 }
             }
