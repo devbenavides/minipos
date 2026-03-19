@@ -34,7 +34,8 @@ fun ProductScreen(
     productViewModel: ProductViewModel,
     saleViewModel: SaleViewModel,
     onAddProductClick: () -> Unit,
-    onEditProductClick: (Product) -> Unit
+    onEditProductClick: (Product) -> Unit,
+    onAddProduct: (SaleItem) -> Unit
 ) {
 
     val uiState by productViewModel.uiState.collectAsState()
@@ -63,12 +64,16 @@ fun ProductScreen(
             items(uiState.products) { product ->
                 ProductItem(
                     product = product,
-                    onAddToSale = { selectedProduct -> // 👈 ESTE ES OTRO
+                    onAddToSale = { selectedProduct ->
                         val saleItem = SaleItem(
-                            product = selectedProduct,
+                            id = 0L,
+                            saleId = saleViewModel.currentSale?.id ?: 0L,
+                            productId = selectedProduct.id,
+                            productName = selectedProduct.name,
+                            price = selectedProduct.price,
                             quantity = 1
                         )
-                        saleViewModel.addItem(saleItem)
+                        onAddProduct(saleItem) // <-- callback a SaleScreen
                     },
                     onEdit = {onEditProductClick(it)},
                     onDelete = {productToDelete = product}
@@ -106,18 +111,18 @@ fun ProductScreen(
 fun ProductItem(
     product: Product,
     onAddToSale: (Product) -> Unit,
-    onEdit:(Product) -> Unit,
-    onDelete:(Long) -> Unit
+    onEdit: (Product) -> Unit,
+    onDelete: (Long) -> Unit
 ) {
-    var showDescription  by remember { mutableStateOf(false) }
+    var showDescription by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(8.dp)){
+        Column(modifier = Modifier.padding(8.dp)) {
             Row(
                 modifier = Modifier
                     .padding(8.dp)
@@ -126,40 +131,36 @@ fun ProductItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = product.name,
-                        style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        text = "Precio: ${product.price}",
-                        style = MaterialTheme.typography.bodyMedium)
+                    Text(text = product.name, style = MaterialTheme.typography.titleMedium)
+                    Text(text = "Precio: ${product.price}", style = MaterialTheme.typography.bodyMedium)
                 }
                 Row {
                     Button(onClick = { onAddToSale(product) }) {
                         Text("Agregar")
                     }
                     IconButton(onClick = { showDescription = true }) {
-                        IconButton(onClick = { showDescription = true }) {
-                            Text("ℹ️") // info emoji
-                        }
+                        Text("ℹ️")
                     }
                 }
-
             }
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
-            ){
-                TextButton(onClick = { onEdit(product)}){
+            ) {
+                TextButton(onClick = { onEdit(product) }) {
                     Text("Editar")
                 }
-                TextButton(onClick = {onDelete(product.id)}){
+                TextButton(onClick = { onDelete(product.id) }) {
                     Text("Eliminar")
                 }
             }
         }
-
     }
+
+    // Dialogo de descripción
     if (showDescription) {
         AlertDialog(
             onDismissRequest = { showDescription = false },

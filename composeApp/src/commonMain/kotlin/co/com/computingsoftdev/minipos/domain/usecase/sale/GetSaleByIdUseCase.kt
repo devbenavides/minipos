@@ -3,11 +3,8 @@ package co.com.computingsoftdev.minipos.domain.usecase.sale
 import co.com.computingsoftdev.minipos.domain.model.Sale
 import co.com.computingsoftdev.minipos.domain.repository.SaleRepository
 
-class SaveSaleUseCase(
+class GetSaleByIdUseCase(
     private val repository: SaleRepository
 ) {
-
-    fun execute(sale: Sale): Long {
-        return repository.saveSale(sale)
-    }
+    fun execute(saleId: Long): Sale? = repository.getSaleById(saleId)
 }

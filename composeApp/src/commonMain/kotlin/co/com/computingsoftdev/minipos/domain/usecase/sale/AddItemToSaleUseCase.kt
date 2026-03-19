@@ -1,18 +1,21 @@
 package co.com.computingsoftdev.minipos.domain.usecase.sale
 
+import co.com.computingsoftdev.minipos.domain.model.Sale
 import co.com.computingsoftdev.minipos.domain.model.SaleItem
 
 class AddItemToSaleUseCase {
-    fun execute(cartItems: MutableList<SaleItem>, itemToAdd: SaleItem) {
-        val existingItem = cartItems.find { it.product.id == itemToAdd.product.id }
+    fun execute(sale: Sale, item: SaleItem): Sale {
+        val items = sale.items.toMutableList()
 
-        if (existingItem != null) {
-            val index = cartItems.indexOf(existingItem)
-            cartItems[index] = existingItem.copy(
-                quantity = existingItem.quantity + itemToAdd.quantity
-            )
+        // Verificar si el item ya existe
+        val existing = items.find { it.productId == item.productId }
+        if (existing != null) {
+            val index = items.indexOf(existing)
+            items[index] = existing.copy(quantity = existing.quantity + item.quantity)
         } else {
-            cartItems.add(itemToAdd)
+            items.add(item)
         }
+
+        return sale.copy(items = items)
     }
 }

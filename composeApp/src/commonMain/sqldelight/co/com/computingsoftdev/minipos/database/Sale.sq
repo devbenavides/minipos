@@ -1,27 +1,53 @@
--- Sale.sq
-
 CREATE TABLE Sale (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     date INTEGER NOT NULL,
-    total INTEGER NOT NULL
+    subtotal INTEGER NOT NULL,
+    total INTEGER NOT NULL,
+    status TEXT NOT NULL
 );
 
--- Queries para Sale
+-- Queries básicas
 selectAllSales:
 SELECT * FROM Sale;
 
 selectSaleById:
 SELECT * FROM Sale WHERE id = ?;
 
+selectPendingSales:
+SELECT * FROM Sale
+WHERE status = 'PENDING'
+ORDER BY date DESC;
+
 insertSale:
-INSERT INTO Sale(date, total)
-VALUES (?,  ?);
+INSERT INTO Sale(date, subtotal, total, status)
+VALUES (?, ?, ?, ?);
+
+selectLastInsertedId:
+SELECT last_insert_rowid();
 
 updateSale:
 UPDATE Sale
-SET date = ?, total = ?
+SET date = ?, subtotal = ?, total = ?, status = ?
 WHERE id = ?;
 
 deleteSale:
-DELETE FROM Sale
-WHERE id = ?;
+DELETE FROM Sale WHERE id = ?;
+
+-- Query para traer venta completa con items y nombre de producto
+selectSaleWithItems:
+SELECT
+    s.id AS sale_id,
+    s.date,
+    s.subtotal,
+    s.total,
+    s.status,
+    si.id AS item_id,
+    si.productId,
+    si.quantity,
+    p.name AS productName,
+    p.price
+FROM Sale s
+LEFT JOIN SaleItem si ON si.saleId = s.id
+LEFT JOIN Product p ON si.productId = p.id
+WHERE s.status = 'PENDING';
+

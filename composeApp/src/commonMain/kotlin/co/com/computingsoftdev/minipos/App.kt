@@ -51,6 +51,10 @@ fun App(
                         onEditProductClick = {
                             selectedProduct = it
                             currentScreen = Screen.AddProduct
+                        },
+                        onAddProduct = { saleItem ->
+                            saleViewModel.addItem(saleItem) // agrega a la venta actual
+                            currentScreen = Screen.Sale     // opcional: navegar a la venta
                         }
                     )
                 }
@@ -65,8 +69,12 @@ fun App(
                     )
                 }
 
-                Screen.Sale -> {
-                    SaleScreen(saleViewModel)
+                Screen.Sale -> { // ✅ este es el branch correcto
+                    SaleScreen(
+                        saleViewModel = saleViewModel,
+                        productViewModel = productViewModel
+
+                    )
                 }
             }
         }

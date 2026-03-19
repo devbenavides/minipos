@@ -1,10 +1,7 @@
 package co.com.computingsoftdev.minipos.domain.usecase.sale
 
-class CalculateTotalUseCase(
-    private val taxPercentage: Double = 0.0 // opcional, 0 si no hay impuesto
-) {
-
-    fun execute(subtotal: Long): Long {
-        return subtotal + (subtotal * taxPercentage / 100).toLong()
+class CalculateTotalUseCase {
+    fun execute(subtotal: Long, tax: Long = 0L, discount: Long = 0L): Long {
+        return subtotal + tax - discount
     }
 }

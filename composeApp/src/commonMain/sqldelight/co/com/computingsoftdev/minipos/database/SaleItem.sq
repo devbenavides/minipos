@@ -1,27 +1,35 @@
--- SaleItem.sq
-
 CREATE TABLE SaleItem (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     saleId INTEGER NOT NULL,
     productId INTEGER NOT NULL,
     quantity INTEGER NOT NULL,
-    subtotal INTEGER NOT NULL,
-    FOREIGN KEY(saleId) REFERENCES Sale(id),
+    price INTEGER NOT NULL,
+    FOREIGN KEY(saleId) REFERENCES Sale(id) ON DELETE CASCADE,
     FOREIGN KEY(productId) REFERENCES Product(id)
 );
 
--- Queries para SaleItem
+-- Queries
 selectItemsBySale:
 SELECT * FROM SaleItem WHERE saleId = ?;
 
 insertSaleItem:
-INSERT INTO SaleItem(saleId, productId, quantity, subtotal)
+INSERT INTO SaleItem(saleId, productId, quantity, price)
 VALUES (?, ?, ?, ?);
 
 updateSaleItem:
 UPDATE SaleItem
-SET quantity = ?, subtotal = ?
+SET quantity = ?, price = ?
 WHERE id = ?;
 
 deleteItemsBySale:
 DELETE FROM SaleItem WHERE saleId = ?;
+
+-- Índices para rendimiento
+createIndexSaleId:
+CREATE INDEX IF NOT EXISTS idx_saleItem_saleId ON SaleItem(saleId);
+
+createIndexProductId:
+CREATE INDEX IF NOT EXISTS idx_saleItem_productId ON SaleItem(productId);
+
+deleteSaleItemBySaleAndProduct:
+DELETE FROM SaleItem WHERE saleId = ? AND productId = ?;

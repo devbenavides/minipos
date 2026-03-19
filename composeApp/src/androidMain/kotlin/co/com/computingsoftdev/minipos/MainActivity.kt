@@ -45,10 +45,16 @@ class MainActivity : ComponentActivity() {
         )
 
         val saleViewModel = SaleViewModel(
-            AddItemToSaleUseCase(),
-            CalculateSubtotalUseCase(),
-            CalculateTotalUseCase(),
-            SaveSaleUseCase(saleRepository)
+            createSaleUseCase = CreateSaleUseCase(),
+            addItemToSaleUseCase = AddItemToSaleUseCase(),
+            updateItemQuantityUseCase = UpdateItemQuantityUseCase(),
+            removeItemFromSaleUseCase = RemoveItemFromSaleUseCase(saleRepository),
+            calculateSubtotalUseCase = CalculateSubtotalUseCase(),
+            calculateTotalUseCase = CalculateTotalUseCase(),
+            saveSaleUseCase = SaveSaleUseCase(saleRepository),
+            getPendingSalesUseCase = GetPendingSalesUseCase(saleRepository),
+            getSaleByIdUseCase = GetSaleByIdUseCase(saleRepository),
+            deleteSaleUseCase = DeleteSaleUseCase(saleRepository)
         )
 
         setContent {
