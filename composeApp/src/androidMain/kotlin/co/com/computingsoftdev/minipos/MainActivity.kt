@@ -26,17 +26,20 @@ class MainActivity : ComponentActivity() {
 
         val databaseFactory = DatabaseFactory(this)
 
+        // 🔹 DataSources
         val productLocal = ProductLocalDataSource(databaseFactory.productQueries)
 
         val saleLocal = SaleLocalDataSource(
-            databaseFactory.saleQueries,
-            databaseFactory.saleItemQueries,
-            productLocal
+            saleQueries = databaseFactory.saleQueries,
+            saleItemQueries = databaseFactory.saleItemQueries,
+            productLocalDataSource = productLocal
         )
 
+        // 🔹 Repositories
         val productRepository = ProductRepositoryImpl(productLocal)
         val saleRepository = SaleRepositoryImpl(saleLocal)
 
+        // 🔹 ViewModels
         val productViewModel = ProductViewModel(
             GetProductsUseCase(productRepository),
             AddProductUseCase(productRepository),
@@ -53,8 +56,11 @@ class MainActivity : ComponentActivity() {
             calculateTotalUseCase = CalculateTotalUseCase(),
             saveSaleUseCase = SaveSaleUseCase(saleRepository),
             getPendingSalesUseCase = GetPendingSalesUseCase(saleRepository),
+            getCompletedSalesUseCase = GetCompletedSalesUseCase(saleRepository),
             getSaleByIdUseCase = GetSaleByIdUseCase(saleRepository),
-            deleteSaleUseCase = DeleteSaleUseCase(saleRepository)
+            deleteSaleUseCase = DeleteSaleUseCase(saleRepository),
+            saleLocalDataSource = saleLocal,
+            getSalesByStatusUseCase = GetSalesByStatusUseCase(saleRepository)
         )
 
         setContent {

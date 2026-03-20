@@ -1,5 +1,6 @@
 package co.com.computingsoftdev.minipos.data.datasource.local
 
+import co.com.computingsoftdev.minipos.core.extensions.toSaleStatus
 import co.com.computingsoftdev.minipos.database.SaleItemQueries
 import co.com.computingsoftdev.minipos.database.SaleQueries
 import co.com.computingsoftdev.minipos.domain.model.Product
@@ -13,13 +14,9 @@ class SaleLocalDataSource(
     private val productLocalDataSource: ProductLocalDataSource
 ) {
 
-    /**
-     * Inserta una venta completa con sus items.
-     * Calcula subtotal en memoria antes de guardar.
-     */
-    fun saveSale(sale: Sale):Long {
+    fun saveSale(sale: Sale): Long {
         return if (sale.id == 0L) {
-            // 🔹 INSERT
+
             saleQueries.insertSale(
                 date = sale.date,
                 subtotal = sale.subtotal,
@@ -31,8 +28,9 @@ class SaleLocalDataSource(
 
             insertItems(saleId, sale.items)
             saleId
+
         } else {
-            // 🔹 UPDATE
+
             saleQueries.updateSale(
                 date = sale.date,
                 subtotal = sale.subtotal,
@@ -43,6 +41,7 @@ class SaleLocalDataSource(
 
             saleItemQueries.deleteItemsBySale(sale.id)
             insertItems(sale.id, sale.items)
+
             sale.id
         }
     }
@@ -53,92 +52,107 @@ class SaleLocalDataSource(
                 saleId = saleId,
                 productId = item.productId,
                 quantity = item.quantity.toLong(),
-                price = item.price
+                price = item.price // 🔥 correcto
             )
         }
     }
 
-
     /**
-     * Obtiene todos los items de una venta
+     * Obtener items de una venta
      */
     fun getItemsBySale(saleId: Long): List<SaleItem> {
-        val entities = saleItemQueries.selectItemsBySale(saleId).executeAsList()
+        return saleItemQueries
+            .selectItemsBySale(saleId)
+            .executeAsList()
+            .mapNotNull { entity ->
 
-        return entities.map { entity ->
-            val productName = productLocalDataSource.getById(entity.productId)?.name ?: "Producto"
-            SaleItem(
-                id = entity.id,
-                saleId = saleId,
-                productId = entity.productId,
-                productName = productName,
-                price = entity.price,
-                quantity = entity.quantity.toInt()
-            )
-        }
+                val product = productLocalDataSource.getById(entity.productId)
+                    ?: return@mapNotNull null
+
+                SaleItem(
+                    id = entity.id,
+                    saleId = saleId,
+                    productId = entity.productId,
+                    productName = product.name,
+                    price = entity.price, // 🔥 FIX importante
+                    quantity = entity.quantity.toInt()
+                )
+            }
     }
 
     /**
-     * Obtener todas las ventas con sus items
+     * 🔥 Construye Sale desde resultado de SQLDelight
+     * (sin depender de SaleEntity)
+     */
+    private fun buildSale(
+        id: Long,
+        date: Long,
+        total: Long,
+        status: String
+    ): Sale {
+
+        val items = getItemsBySale(id)
+
+        return Sale(
+            id = id,
+            items = items,
+            subtotal = items.sumOf { it.subtotal() },
+            total = total,
+            date = date,
+            status = status.toSaleStatus()
+        )
+    }
+
+    /**
+     * Obtener todas las ventas
      */
     fun getAllSales(): List<Sale> {
-        return saleQueries.selectAllSales().executeAsList().map { entity ->
-            val items = getItemsBySale(entity.id)
-            val subtotal = items.sumOf { it.subtotal() }
+        return saleQueries
+            .selectAllSales()
+            .executeAsList()
+            .map {
+                buildSale(
+                    id = it.id,
+                    date = it.date,
+                    total = it.total,
+                    status = it.status
+                )
+            }
+    }
 
-            Sale(
-                id = entity.id,
-                items = items,
-                subtotal = subtotal,
-                total = entity.total.toLong(),
-                date = entity.date,
-                status = when (entity.status) {
-                    "PENDING" -> SaleStatus.PENDING
-                    "COMPLETED" -> SaleStatus.COMPLETED
-                    "CANCELLED" -> SaleStatus.CANCELLED
-                    else -> SaleStatus.PENDING
-                }
+    /**
+     * 🔥 BASE: obtener ventas por estado
+     */
+    fun getSalesByStatus(status: SaleStatus): List<Sale> {
+
+        val sales = saleQueries
+            .selectAllSales()
+            .executeAsList()
+            .filter { it.status == status.name }
+        println("DEBUG: ventas con status ${status.name} = ${sales.size}")
+        return sales.map {
+            buildSale(
+                id = it.id,
+                date = it.date,
+                total = it.total,
+                status = it.status
             )
         }
     }
 
     /**
-     * Opcional: obtener ventas pendientes
+     * Ventas pendientes (sin duplicación)
      */
     fun getPendingSales(): List<Sale> {
-        val saleEntities = saleQueries.selectAllSales().executeAsList()
-            .filter { it.status == "PENDING" }
+        return getSalesByStatus(SaleStatus.PENDING)
+    }
 
-        return saleEntities.map { saleEntity ->
-            val items = saleItemQueries.selectItemsBySale(saleEntity.id)
-                .executeAsList()
-                .mapNotNull { itemEntity ->
-                    val product = productLocalDataSource.getById(itemEntity.productId) ?: return@mapNotNull null
-                    SaleItem(
-                        id = itemEntity.id,
-                        saleId = saleEntity.id,
-                        productId = product.id,
-                        productName = product.name,
-                        price = product.price,
-                        quantity = itemEntity.quantity.toInt()
-                    )
-                }
-
-            Sale(
-                id = saleEntity.id,
-                items = items,
-                subtotal = items.sumOf { it.subtotal() },
-                total = items.sumOf { it.subtotal() }, // o aplicar impuestos si los tienes
-                date = saleEntity.date,
-                status = SaleStatus.PENDING
-            )
-        }
+    fun getCompletedSales(): List<Sale> {
+        return getSalesByStatus(SaleStatus.COMPLETED)
     }
 
     fun deleteSale(saleId: Long) {
-        // Primero borramos los items de la venta
         saleItemQueries.deleteItemsBySale(saleId)
-        // Luego borramos la venta
         saleQueries.deleteSale(saleId)
     }
 

@@ -3,6 +3,7 @@ package co.com.computingsoftdev.minipos.data.datasource.repository
 import co.com.computingsoftdev.minipos.data.datasource.local.SaleLocalDataSource
 import co.com.computingsoftdev.minipos.domain.model.Sale
 import co.com.computingsoftdev.minipos.domain.model.SaleItem
+import co.com.computingsoftdev.minipos.domain.model.SaleStatus
 import co.com.computingsoftdev.minipos.domain.repository.SaleRepository
 
 class SaleRepositoryImpl(
@@ -26,6 +27,10 @@ class SaleRepositoryImpl(
         return local.getPendingSales()
     }
 
+    override fun getCompletedSales(): List<Sale> {
+        return local.getCompletedSales()
+    }
+
     // Obtener items de una venta específica
     override fun getItemsBySale(saleId: Long): List<SaleItem> {
         return local.getItemsBySale(saleId)
@@ -43,5 +48,9 @@ class SaleRepositoryImpl(
 
     override fun deleteSaleItem(saleId: Long, productId: Long) {
         local.deleteSaleItem(saleId,productId)
+    }
+
+    override fun getSalesByStatus(status: SaleStatus): List<Sale> {
+        return local.getSalesByStatus(status)
     }
 }

@@ -4,11 +4,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import co.com.computingsoftdev.minipos.data.datasource.local.SaleLocalDataSource
 import co.com.computingsoftdev.minipos.domain.model.Sale
 import co.com.computingsoftdev.minipos.domain.model.SaleItem
 import co.com.computingsoftdev.minipos.domain.model.SaleStatus
 import co.com.computingsoftdev.minipos.domain.usecase.sale.*
-import kotlin.time.ExperimentalTime
 
 class SaleViewModel(
     private val createSaleUseCase: CreateSaleUseCase,
@@ -19,14 +19,23 @@ class SaleViewModel(
     private val calculateTotalUseCase: CalculateTotalUseCase,
     private val saveSaleUseCase: SaveSaleUseCase,
     private val getPendingSalesUseCase: GetPendingSalesUseCase,
+    private val getCompletedSalesUseCase: GetCompletedSalesUseCase,
     private val getSaleByIdUseCase: GetSaleByIdUseCase,
-    private val deleteSaleUseCase: DeleteSaleUseCase
+    private val deleteSaleUseCase: DeleteSaleUseCase,
+    private val saleLocalDataSource: SaleLocalDataSource,
+    private val getSalesByStatusUseCase: GetSalesByStatusUseCase
 ) : ViewModel() {
 
     var currentSale by mutableStateOf<Sale?>(null)
         private set
 
     var pendingSales by mutableStateOf<List<Sale>>(emptyList())
+        private set
+
+    var completedSales by mutableStateOf<List<Sale>>(emptyList())
+        private set
+
+    var completedFilter by mutableStateOf<SaleStatus?>(null)
         private set
 
     var cartItems by mutableStateOf<List<SaleItem>>(emptyList())
@@ -40,6 +49,7 @@ class SaleViewModel(
 
     init {
         loadPendingSales()
+        loadCompletedSales()
         startNewSale()
     }
 
@@ -88,6 +98,19 @@ class SaleViewModel(
         pendingSales = getPendingSalesUseCase.execute()
     }
 
+    fun applyCompletedFilter(status: SaleStatus?) {
+        completedFilter = status
+        loadCompletedSales() // recarga las ventas aplicando el filtro
+    }
+    fun loadCompletedSales() {
+        //completedSales = getCompletedSalesUseCase.execute()
+        completedSales = if (completedFilter == null) {
+            getSalesByStatusUseCase.execute(SaleStatus.COMPLETED)
+        } else {
+            getSalesByStatusUseCase.execute(completedFilter!!)
+        }
+    }
+
     fun addItem(item: SaleItem) {
         currentSale?.let { sale ->
             val updatedSale = addItemToSaleUseCase.execute(sale, item)
@@ -133,6 +156,7 @@ class SaleViewModel(
             loadPendingSales()
         }
     }
+
     private fun checkEmptyPendingSales() {
         val emptySales = pendingSales.filter { it.items.isEmpty() }
 
@@ -160,11 +184,26 @@ class SaleViewModel(
                 status = SaleStatus.COMPLETED
             )
 
+            // Guardar la venta completada
             saveSaleUseCase.execute(saleToSave)
 
-            // Crear o usar la venta pendiente vacía
-            startNewSale()
-            loadPendingSales()
+            // 🔹 Recargar pendientes
+            val updatedPendings = getPendingSalesUseCase.execute()
+
+            // 🔹 Buscar pendiente vacía o crear nueva
+            val emptyPending = updatedPendings.find { it.items.isEmpty() } ?: run {
+                val newPending = createSaleUseCase.execute()
+                saveSaleUseCase.execute(newPending.copy(status = SaleStatus.PENDING))
+                newPending
+            }
+
+            // 🔹 Seleccionar automáticamente la pendiente vacía
+            currentSale = emptyPending
+
+            // 🔹 Recargar pendientes en la UI
+            pendingSales = getPendingSalesUseCase.execute()
+            recalcTotals()
+            loadCompletedSales()
         }
     }
 
@@ -179,5 +218,9 @@ class SaleViewModel(
                 startNewSale()
             }
         }
+    }
+
+    fun getSalesLocalDataSource(): SaleLocalDataSource {
+        return saleLocalDataSource
     }
 }

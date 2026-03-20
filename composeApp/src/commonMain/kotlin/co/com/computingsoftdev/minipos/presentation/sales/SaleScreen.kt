@@ -14,15 +14,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import co.com.computingsoftdev.minipos.domain.model.Product
 import co.com.computingsoftdev.minipos.domain.model.Sale
 import co.com.computingsoftdev.minipos.domain.model.SaleItem
-import co.com.computingsoftdev.minipos.presentation.components.SaleListComponent
+import co.com.computingsoftdev.minipos.domain.model.SaleStatus
 import co.com.computingsoftdev.minipos.presentation.products.ProductViewModel
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 @Composable
 fun SaleScreen(
@@ -34,16 +33,15 @@ fun SaleScreen(
     val subtotal = saleViewModel.subtotal
     val total = saleViewModel.total
     val pendingSales = saleViewModel.pendingSales
+    val completedSales = saleViewModel.completedSales
 
-    // Estado para mostrar diálogo de selección de productos
     var showProductDialog by remember { mutableStateOf(false) }
     val pendingSalesListState = rememberLazyListState()
+    val completedSalesListState = rememberLazyListState()
 
     LaunchedEffect(currentSale?.id, pendingSales) {
         val index = pendingSales.indexOfFirst { it.id == currentSale?.id }
-        if (index >= 0) {
-            pendingSalesListState.animateScrollToItem(index)
-        }
+        if (index >= 0) pendingSalesListState.animateScrollToItem(index)
     }
 
     Column(
@@ -57,27 +55,45 @@ fun SaleScreen(
             "Carrito de Venta",
             style = MaterialTheme.typography.headlineSmall
         )
-
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 🔹 Carrito (ocupa el espacio principal)
-        LazyColumn(
+        // 🔹 Carrito de venta (peso para ocupar espacio restante)
+        Card(
             modifier = Modifier
-                .weight(1f)
                 .fillMaxWidth()
+                .weight(1f),
+            elevation = CardDefaults.cardElevation(4.dp)
         ) {
-            items(cartItems) { item ->
-                SaleItemRow(
-                    item = item,
-                    onQuantityChange = { newQty ->
-                        saleViewModel.updateItemQuantity(item.productId, newQty)
-                    },
-                    onRemove = { saleViewModel.removeItem(item.productId) }
-                )
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(8.dp)
+            ) {
+                if (cartItems.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("No hay productos en el carrito", color = Color.Gray)
+                        }
+                    }
+                } else {
+                    items(cartItems) { item ->
+                        SaleItemRow(
+                            item = item,
+                            onQuantityChange = { newQty -> saleViewModel.updateItemQuantity(item.productId, newQty) },
+                            onRemove = { saleViewModel.removeItem(item.productId) }
+                        )
+                    }
+                }
             }
         }
 
-        // 🔹 Totales (fijos)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 🔹 Totales
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(4.dp)
@@ -90,7 +106,7 @@ fun SaleScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 🔹 Botones compactos
+        // 🔹 Botones
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -99,58 +115,94 @@ fun SaleScreen(
                 onClick = { showProductDialog = true },
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(vertical = 6.dp)
-            ) {
-                Text("Agregar")
-            }
+            ) { Text("Agregar") }
 
             Button(
                 onClick = { saleViewModel.saveSale() },
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(vertical = 6.dp)
-            ) {
-                Text("Finalizar")
-            }
+            ) { Text("Finalizar") }
 
             Button(
                 onClick = { saleViewModel.startNewSale() },
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(vertical = 6.dp)
-            ) {
-                Text("Nueva")
-            }
+            ) { Text("Nueva") }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 🔹 Ventas pendientes (ALTURA CONTROLADA 🔥)
-        if (pendingSales.isNotEmpty()) {
+        // 🔹 Ventas pendientes
+        Text("Ventas Pendientes", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.3f) // ocupa un 30% del espacio disponible
+        ) {
+            if (pendingSales.isNotEmpty()) {
+                LazyColumn(state = pendingSalesListState) {
+                    items(pendingSales) { sale ->
+                        PendingSaleRow(
+                            sale = sale,
+                            isSelected = sale.id == currentSale?.id,
+                            onSelect = { saleViewModel.selectPendingSale(sale) },
+                            onDelete = { saleViewModel.deletePendingSale(sale) }
+                        )
+                    }
+                }
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No hay ventas pendientes", color = Color.Gray)
+                }
+            }
+        }
 
-            Text(
-                "Ventas Pendientes",
-                style = MaterialTheme.typography.titleMedium
-            )
+        Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
+        // 🔹 Filtro y ventas finalizadas
+        Text("Ventas Finalizadas", style = MaterialTheme.typography.titleMedium)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { saleViewModel.applyCompletedFilter(null) }) { Text("Todos") }
+            Button(onClick = { saleViewModel.applyCompletedFilter(SaleStatus.COMPLETED) }) { Text("Completadas") }
+            Button(onClick = { saleViewModel.applyCompletedFilter(SaleStatus.CANCELLED) }) { Text("Canceladas") }
+        }
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(140.dp) // 🔥 CLAVE: evita que tape el carrito
-            ) {
-                items(pendingSales) { sale ->
-                    PendingSaleRow(
-                        sale = sale,
-                        isSelected = sale.id == currentSale?.id,
-                        //onSelect = { saleViewModel.loadSale(sale.id) },
-                        onSelect = { saleViewModel.selectPendingSale(sale) },
-                        onDelete = {saleViewModel.deletePendingSale(sale)}
-                    )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.4f) // ocupa 40% del espacio
+        ) {
+            if (completedSales.isNotEmpty()) {
+                LazyColumn(state = completedSalesListState) {
+                    items(completedSales) { sale ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Venta #${sale.id}")
+                            Text("Items: ${sale.items.size}")
+                            Text("Total: ${sale.total}")
+                        }
+                    }
+                }
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No hay ventas para este filtro", color = Color.Gray)
                 }
             }
         }
     }
 
-    // Dialogo para seleccionar producto
+    // 🔹 Diálogo de selección de productos
     if (showProductDialog) {
         ProductSelectionDialog(
             products = productViewModel.uiState.value.products,
@@ -222,6 +274,9 @@ fun PendingSaleRow(
     onSelect: () -> Unit,
     onDelete: (Sale) -> Unit
 ) {
+    // 🔥 Recalcular total en memoria para mostrar en listado
+    val total = sale.items.sumOf { it.subtotal() }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -241,7 +296,7 @@ fun PendingSaleRow(
         ) {
             Text("Venta #${sale.id}")
             Text("Items: ${sale.items.size}")
-            Text("Total: ${sale.total}")
+            Text("Total: $total") // ahora siempre correcto
         }
         // Botón eliminar
         IconButton(

@@ -2,6 +2,7 @@ package co.com.computingsoftdev.minipos.domain.repository
 
 import co.com.computingsoftdev.minipos.domain.model.Sale
 import co.com.computingsoftdev.minipos.domain.model.SaleItem
+import co.com.computingsoftdev.minipos.domain.model.SaleStatus
 
 interface SaleRepository {
 
@@ -13,6 +14,7 @@ interface SaleRepository {
 
     /** Obtiene todas las ventas pendientes (PENDING) */
     fun getPendingSales(): List<Sale>
+    fun getCompletedSales(): List<Sale>
 
     /** Obtiene items de una venta específica */
     fun getItemsBySale(saleId: Long): List<SaleItem>
@@ -21,4 +23,6 @@ interface SaleRepository {
     fun getSaleById(saleId: Long): Sale?
     fun deleteSale(saleId: Long)
     fun deleteSaleItem(saleId: Long, productId: Long)
+
+    fun getSalesByStatus(status: SaleStatus): List<Sale>
 }
