@@ -1,6 +1,7 @@
 package co.com.computingsoftdev.minipos.data.datasource.local
 
 import co.com.computingsoftdev.minipos.core.extensions.toSaleStatus
+import co.com.computingsoftdev.minipos.data.mapper.toDomain
 import co.com.computingsoftdev.minipos.database.SaleItemQueries
 import co.com.computingsoftdev.minipos.database.SaleQueries
 import co.com.computingsoftdev.minipos.domain.model.Product
@@ -51,8 +52,9 @@ class SaleLocalDataSource(
             saleItemQueries.insertSaleItem(
                 saleId = saleId,
                 productId = item.productId,
+                productName = item.productName,
                 quantity = item.quantity.toLong(),
-                price = item.price // 🔥 correcto
+                price = item.price
             )
         }
     }
@@ -64,20 +66,7 @@ class SaleLocalDataSource(
         return saleItemQueries
             .selectItemsBySale(saleId)
             .executeAsList()
-            .mapNotNull { entity ->
-
-                val product = productLocalDataSource.getById(entity.productId)
-                    ?: return@mapNotNull null
-
-                SaleItem(
-                    id = entity.id,
-                    saleId = saleId,
-                    productId = entity.productId,
-                    productName = product.name,
-                    price = entity.price, // 🔥 FIX importante
-                    quantity = entity.quantity.toInt()
-                )
-            }
+            .map { it.toDomain()}
     }
 
     /**

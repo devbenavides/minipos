@@ -10,16 +10,8 @@ class ProductLocalDataSource(
     fun getAll() =
         queries.selectAllProducts().executeAsList()
 
-    fun getById(id: Long): Product? {
-        val entity = queries.selectProductById(id).executeAsOneOrNull()
-        return entity?.let {
-            Product(
-                id = it.id,
-                name = it.name,
-                price = it.price,
-                description = it.description
-            )
-        }
+    fun getById(id: Long){
+        queries.selectProductById(id).executeAsOneOrNull()
     }
 
     fun insert(name: String, price: Long, description: String?) {
