@@ -3,10 +3,19 @@ package co.com.computingsoftdev.minipos
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonShapes
+import androidx.compose.material3.IconToggleButtonShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import co.com.computingsoftdev.minipos.data.datasource.local.SaleLocalDataSource
 import co.com.computingsoftdev.minipos.domain.model.Product
@@ -19,11 +28,15 @@ import co.com.computingsoftdev.minipos.presentation.reports.ReportScreen
 import co.com.computingsoftdev.minipos.presentation.reports.ReportViewModel
 import co.com.computingsoftdev.minipos.presentation.sales.SaleScreen
 import co.com.computingsoftdev.minipos.presentation.sales.SaleViewModel
+import co.com.computingsoftdev.minipos.presentation.sales.sale_outcome.SaleOutcomeScreen
+import co.com.computingsoftdev.minipos.presentation.sales.sale_outcome.SaleOutcomeViewModel
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun App(
     productViewModel: ProductViewModel,
-    saleViewModel: SaleViewModel
+    saleViewModel: SaleViewModel,
+    saleOutcomeViewModel: SaleOutcomeViewModel
 ) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Products) }
     var selectedProduct by remember { mutableStateOf<Product?>(null) }
@@ -34,23 +47,16 @@ fun App(
     }
 
     MaterialTheme {
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Button(onClick = { currentScreen = Screen.Products }) { Text("Productos") }
-                Button(onClick = { currentScreen = Screen.Sale }) { Text("Ventas") }
-                Button(onClick = { currentScreen = Screen.Reports }) { Text("Reportes") }
-            }
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                AppBottomNavigation(
+                    currentScreen = currentScreen,
+                    onScreenSelected = { selected -> currentScreen = selected }
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            when (currentScreen) {
-                Screen.Products -> {
-                    // Muestra la lista y permite agregar productos
-                    ProductScreen(
+                Spacer(modifier = Modifier.height(16.dp))
+                when (currentScreen) {
+                    Screen.Products -> ProductScreen(
                         productViewModel = productViewModel,
                         saleViewModel = saleViewModel,
                         onAddProductClick = {
@@ -62,37 +68,66 @@ fun App(
                             currentScreen = Screen.AddProduct
                         },
                         onAddProduct = { saleItem ->
-                            saleViewModel.addItem(saleItem) // agrega a la venta actual
-                            currentScreen = Screen.Sale     // opcional: navegar a la venta
+                            saleViewModel.addItem(saleItem)
+                            currentScreen = Screen.Sale
                         }
                     )
-                }
 
-                Screen.AddProduct -> {
-                    ProductFormScreen(
+                    Screen.AddProduct -> ProductFormScreen(
                         productViewModel = productViewModel,
                         product = selectedProduct,
-                        onBack = {
-                            currentScreen = Screen.Products
-                        }
+                        onBack = { currentScreen = Screen.Products }
                     )
-                }
 
-                Screen.Sale -> { // ✅ este es el branch correcto
-                    SaleScreen(
+                    Screen.Sale -> SaleScreen(
                         saleViewModel = saleViewModel,
                         productViewModel = productViewModel
-
                     )
-                }
 
-                Screen.Reports -> {
-                    ReportScreen(
+                    Screen.SaleOutcome -> SaleOutcomeScreen(
+                        saleOutcomeViewModel = saleOutcomeViewModel
+                    )
+
+                    Screen.Reports -> ReportScreen(
                         reportViewModel = reportViewModel,
-                        onBack = { currentScreen = Screen.Sale } // vuelve a ventas
+                        onBack = { currentScreen = Screen.Sale }
                     )
                 }
-            }
+
+
         }
+    }
+}
+
+@Composable
+fun AppBottomNavigation(
+    currentScreen: Screen,
+    onScreenSelected: (Screen) -> Unit
+) {
+    NavigationBar {
+        NavigationBarItem(
+            selected = currentScreen == Screen.Products,
+            onClick = { onScreenSelected(Screen.Products) },
+            icon = {}, // vacío por ahora
+            label = { Text("Productos") }
+        )
+        NavigationBarItem(
+            selected = currentScreen == Screen.Sale,
+            onClick = { onScreenSelected(Screen.Sale) },
+            icon = {},
+            label = { Text("Ventas") }
+        )
+        NavigationBarItem(
+            selected = currentScreen == Screen.SaleOutcome,
+            onClick = { onScreenSelected(Screen.SaleOutcome) },
+            icon = {},
+            label = { Text("Finalizadas") }
+        )
+        NavigationBarItem(
+            selected = currentScreen == Screen.Reports,
+            onClick = { onScreenSelected(Screen.Reports) },
+            icon = {},
+            label = { Text("Reportes") }
+        )
     }
 }

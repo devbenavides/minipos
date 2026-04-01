@@ -57,11 +57,11 @@ fun SaleScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 🔹 Carrito de venta (peso para ocupar espacio restante)
+        // 🔹 Carrito de venta (aprox. 40% de altura)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
+                .weight(0.4f),
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             LazyColumn(
@@ -132,13 +132,13 @@ fun SaleScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 🔹 Ventas pendientes
+        // 🔹 Ventas pendientes (aprox. 55% de altura)
         Text("Ventas Pendientes", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(4.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.3f) // ocupa un 30% del espacio disponible
+                .weight(0.55f) // más espacio para pendientes
         ) {
             if (pendingSales.isNotEmpty()) {
                 LazyColumn(state = pendingSalesListState) {
@@ -161,7 +161,8 @@ fun SaleScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+
+        /*Spacer(modifier = Modifier.height(8.dp))
 
         // 🔹 Filtro y ventas finalizadas
         Text("Ventas Finalizadas", style = MaterialTheme.typography.titleMedium)
@@ -199,7 +200,7 @@ fun SaleScreen(
                     Text("No hay ventas para este filtro", color = Color.Gray)
                 }
             }
-        }
+        }*/
     }
 
     // 🔹 Diálogo de selección de productos

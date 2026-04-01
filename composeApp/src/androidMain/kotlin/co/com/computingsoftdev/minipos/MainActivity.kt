@@ -17,6 +17,7 @@ import co.com.computingsoftdev.minipos.domain.usecase.product.*
 import co.com.computingsoftdev.minipos.domain.usecase.sale.*
 import co.com.computingsoftdev.minipos.presentation.products.ProductViewModel
 import co.com.computingsoftdev.minipos.presentation.sales.SaleViewModel
+import co.com.computingsoftdev.minipos.presentation.sales.sale_outcome.SaleOutcomeViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,10 +64,13 @@ class MainActivity : ComponentActivity() {
             getSalesByStatusUseCase = GetSalesByStatusUseCase(saleRepository)
         )
 
+        val saleOutcomeViewModel = SaleOutcomeViewModel(getSalesByStatusUseCase = GetSalesByStatusUseCase(saleRepository))
+
         setContent {
             App(
                 productViewModel = productViewModel,
-                saleViewModel = saleViewModel
+                saleViewModel = saleViewModel,
+                saleOutcomeViewModel = saleOutcomeViewModel
             )
         }
     }

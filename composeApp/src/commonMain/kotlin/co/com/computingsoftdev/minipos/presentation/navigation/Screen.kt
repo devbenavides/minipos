@@ -4,5 +4,6 @@ sealed class Screen {
     object Products : Screen()
     object AddProduct : Screen()
     object Sale : Screen()
+    object SaleOutcome: Screen()
     object Reports : Screen()
 }
