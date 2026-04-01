@@ -38,7 +38,9 @@ fun ProductScreen(
     onAddProduct: (SaleItem) -> Unit
 ) {
 
+    val saleUiState = saleViewModel.uiState
     val uiState by productViewModel.uiState.collectAsState()
+
     var productToDelete by remember { mutableStateOf<Product?>(null) }
 
     LaunchedEffect(Unit) {
@@ -67,7 +69,7 @@ fun ProductScreen(
                     onAddToSale = { selectedProduct ->
                         val saleItem = SaleItem(
                             id = 0L,
-                            saleId = saleViewModel.currentSale?.id ?: 0L,
+                            saleId = saleUiState.currentSale?.id ?: 0L,
                             productId = selectedProduct.id,
                             productName = selectedProduct.name,
                             price = selectedProduct.price,

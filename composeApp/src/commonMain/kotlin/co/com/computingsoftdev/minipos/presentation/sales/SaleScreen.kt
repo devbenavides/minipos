@@ -28,16 +28,16 @@ fun SaleScreen(
     saleViewModel: SaleViewModel,
     productViewModel: ProductViewModel
 ) {
-    val currentSale = saleViewModel.currentSale
-    val cartItems = currentSale?.items ?: emptyList()
-    val subtotal = saleViewModel.subtotal
-    val total = saleViewModel.total
-    val pendingSales = saleViewModel.pendingSales
-    val completedSales = saleViewModel.completedSales
+    val uiState = saleViewModel.uiState
+
+    val currentSale = uiState.currentSale
+    val cartItems = uiState.currentSale?.items ?: emptyList()
+    val subtotal = uiState.subtotal
+    val total = uiState.total
+    val pendingSales = uiState.pendingSales
 
     var showProductDialog by remember { mutableStateOf(false) }
     val pendingSalesListState = rememberLazyListState()
-    val completedSalesListState = rememberLazyListState()
 
     LaunchedEffect(currentSale?.id, pendingSales) {
         val index = pendingSales.indexOfFirst { it.id == currentSale?.id }
@@ -57,7 +57,7 @@ fun SaleScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 🔹 Carrito de venta (aprox. 40% de altura)
+        // 🔹 Carrito de venta (peso para ocupar espacio restante)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -132,13 +132,13 @@ fun SaleScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 🔹 Ventas pendientes (aprox. 55% de altura)
+        // 🔹 Ventas pendientes
         Text("Ventas Pendientes", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(4.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.55f) // más espacio para pendientes
+                .weight(0.55f) // ocupa un 30% del espacio disponible
         ) {
             if (pendingSales.isNotEmpty()) {
                 LazyColumn(state = pendingSalesListState) {
@@ -147,7 +147,7 @@ fun SaleScreen(
                             sale = sale,
                             isSelected = sale.id == currentSale?.id,
                             onSelect = { saleViewModel.selectPendingSale(sale) },
-                            onDelete = { saleViewModel.deletePendingSale(sale) }
+                            onDelete = { saleViewModel.cancelSale(sale) }
                         )
                     }
                 }
@@ -160,47 +160,6 @@ fun SaleScreen(
                 }
             }
         }
-
-
-        /*Spacer(modifier = Modifier.height(8.dp))
-
-        // 🔹 Filtro y ventas finalizadas
-        Text("Ventas Finalizadas", style = MaterialTheme.typography.titleMedium)
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { saleViewModel.applyCompletedFilter(null) }) { Text("Todos") }
-            Button(onClick = { saleViewModel.applyCompletedFilter(SaleStatus.COMPLETED) }) { Text("Completadas") }
-            Button(onClick = { saleViewModel.applyCompletedFilter(SaleStatus.CANCELLED) }) { Text("Canceladas") }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.4f) // ocupa 40% del espacio
-        ) {
-            if (completedSales.isNotEmpty()) {
-                LazyColumn(state = completedSalesListState) {
-                    items(completedSales) { sale ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Venta #${sale.id}")
-                            Text("Items: ${sale.items.size}")
-                            Text("Total: ${sale.total}")
-                        }
-                    }
-                }
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No hay ventas para este filtro", color = Color.Gray)
-                }
-            }
-        }*/
     }
 
     // 🔹 Diálogo de selección de productos
@@ -208,17 +167,19 @@ fun SaleScreen(
         ProductSelectionDialog(
             products = productViewModel.uiState.value.products,
             onSelect = { product ->
-                saleViewModel.addItem(
-                    SaleItem(
-                        id = 0L,
-                        saleId = currentSale?.id ?: 0L,
-                        productId = product.id,
-                        productName = product.name,
-                        price = product.price,
-                        quantity = 1
+                currentSale?.let { sale ->
+                    saleViewModel.addItem(
+                        SaleItem(
+                            id = 0L,
+                            saleId = sale.id,
+                            productId = product.id,
+                            productName = product.name,
+                            price = product.price,
+                            quantity = 1
+                        )
                     )
-                )
-                showProductDialog = false
+                }
+
             },
             onDismiss = { showProductDialog = false }
         )
@@ -302,9 +263,9 @@ fun PendingSaleRow(
         // Botón eliminar
         IconButton(
             onClick = { onDelete(sale) },
-            enabled = sale.items.isEmpty() // solo se puede eliminar si no hay items
+            enabled = true // solo se puede eliminar si no hay items
         ) {
-            Text("🗑️")
+            Text(if (sale.items.isEmpty()) "🗑️" else "❌")
         }
     }
 }
