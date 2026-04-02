@@ -8,13 +8,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -23,11 +27,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import co.com.computingsoftdev.minipos.domain.model.Product
 import co.com.computingsoftdev.minipos.domain.model.SaleItem
 import co.com.computingsoftdev.minipos.presentation.sales.SaleViewModel
 import org.jetbrains.compose.resources.painterResource
+import ui.icons.AppIcons
+import ui.navigation.NavBarIcon
 
 @Composable
 fun ProductScreen(
@@ -38,7 +45,7 @@ fun ProductScreen(
     onAddProduct: (SaleItem) -> Unit
 ) {
 
-    val saleUiState = saleViewModel.uiState
+    val saleUiState by saleViewModel.uiState.collectAsState()
     val uiState by productViewModel.uiState.collectAsState()
 
     var productToDelete by remember { mutableStateOf<Product?>(null) }
@@ -56,6 +63,13 @@ fun ProductScreen(
                 .fillMaxWidth()
                 .padding(8.dp)
         ) {
+            NavBarIcon(
+                AppIcons.PlusIcon,
+                "Nuevo Producto",
+                iconSize = 28.dp,
+                iconColor = Color.White
+            )
+            Spacer(modifier = Modifier.width(8.dp))
             Text("Nuevo Producto")
         }
 
@@ -137,28 +151,41 @@ fun ProductItem(
                     Text(text = "Precio: ${product.price}", style = MaterialTheme.typography.bodyMedium)
                 }
                 Row {
-                    Button(onClick = { onAddToSale(product) }) {
+                    /*Button(onClick = { onAddToSale(product) }) {
+                        NavBarIcon(
+                            AppIcons.PlusIcon,
+                            "Agregar",
+                            iconSize = 28.dp,
+                            iconColor = Color.Gray
+                        )
                         Text("Agregar")
-                    }
-                    IconButton(onClick = { showDescription = true }) {
-                        Text("ℹ️")
+                    }*/
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        IconButton(
+                            onClick = { showDescription = true },
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Icon(
+                                imageVector = AppIcons.InfoCircleIcon,
+                                contentDescription = "Ver descripción",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                TextButton(onClick = { onEdit(product) }) {
-                    Text("Editar")
-                }
-                TextButton(onClick = { onDelete(product.id) }) {
-                    Text("Eliminar")
-                }
-            }
+            ProductCardButtons(
+                onEdit = { onEdit(product) },
+                onDelete = { onDelete(product.id) }
+            )
         }
     }
 
@@ -174,5 +201,53 @@ fun ProductItem(
                 }
             }
         )
+    }
+}
+
+@Composable
+fun ProductCardButtons(
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // 🔹 Editar
+        Button(
+            onClick = onEdit,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                contentColor = MaterialTheme.colorScheme.primary
+            ),
+            modifier = Modifier.weight(1f)
+        ) {
+            Icon(
+                imageVector = AppIcons.PencilIcon,
+                contentDescription = "Editar",
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Editar")
+        }
+
+        // 🔹 Eliminar
+        Button(
+            onClick = onDelete,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                contentColor = MaterialTheme.colorScheme.error
+            ),
+            modifier = Modifier.weight(1f)
+        ) {
+            Icon(
+                imageVector = AppIcons.TrashIcon,
+                contentDescription = "Eliminar",
+                tint = MaterialTheme.colorScheme.error
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Eliminar")
+        }
     }
 }

@@ -9,6 +9,8 @@ import co.com.computingsoftdev.minipos.domain.model.Sale
 import co.com.computingsoftdev.minipos.domain.model.SaleItem
 import co.com.computingsoftdev.minipos.domain.model.SaleStatus
 import co.com.computingsoftdev.minipos.domain.usecase.sale.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class SaleViewModel(
     private val createSaleUseCase: CreateSaleUseCase,
@@ -26,8 +28,8 @@ class SaleViewModel(
     private val getSalesByStatusUseCase: GetSalesByStatusUseCase
 ) : ViewModel() {
 
-    var uiState by mutableStateOf(SaleUiState())
-        private set
+    private val _uiState = MutableStateFlow(SaleUiState())
+    var uiState: StateFlow<SaleUiState> = _uiState
 
     init {
         loadPendingSales()
@@ -44,7 +46,7 @@ class SaleViewModel(
         val emptyPending = pending.find { it.items.isEmpty() }
 
         if (emptyPending != null) {
-            uiState = uiState.copy(
+            _uiState.value = _uiState.value.copy(
                 currentSale = emptyPending,
                 pendingSales = pending
             )
@@ -62,7 +64,7 @@ class SaleViewModel(
         // 🔹 5. Recargar lista ya persistida
         val updatedPending = getPendingSalesUseCase.execute()
 
-        uiState = uiState.copy(
+        _uiState.value = uiState.value.copy(
             currentSale = pendingSale,
             pendingSales = updatedPending
         )
@@ -71,41 +73,41 @@ class SaleViewModel(
     }
 
     fun selectPendingSale(sale: Sale) {
-        uiState = uiState.copy(currentSale = sale)
+        _uiState.value = uiState.value.copy(currentSale = sale)
         recalcTotals()
     }
 
     // Cargar una venta existente (pendiente)
     fun loadSale(saleId: Long) {
         val sale = getSaleByIdUseCase.execute(saleId) ?: return
-        uiState = uiState.copy(currentSale = sale)
+        _uiState.value = _uiState.value.copy(currentSale = sale)
         recalcTotals()
     }
 
     fun loadPendingSales() {
         val sales = getPendingSalesUseCase.execute()
-        uiState = uiState.copy(
+        _uiState.value = _uiState.value.copy(
             pendingSales = sales
         )
     }
 
     fun applyCompletedFilter(status: SaleStatus?) {
-        uiState = uiState.copy(completedFilter = status)
+        _uiState.value = _uiState.value.copy(completedFilter = status)
         loadCompletedSales()
     }
 
     fun loadCompletedSales() {
-        val sales = if (uiState.completedFilter == null) {
+        val sales = if (_uiState.value.completedFilter == null) {
             getSalesByStatusUseCase.execute(SaleStatus.COMPLETED)
         } else {
-            getSalesByStatusUseCase.execute(uiState.completedFilter!!)
+            getSalesByStatusUseCase.execute(_uiState.value.completedFilter!!)
         }
 
-        uiState = uiState.copy(completedSales = sales)
+        _uiState.value = _uiState.value.copy(completedSales = sales)
     }
 
     fun addItem(item: SaleItem) {
-        val sale = uiState.currentSale ?: return
+        val sale = _uiState.value.currentSale ?: return
 
         val updatedSale = addItemToSaleUseCase.execute(sale, item)
 
@@ -113,13 +115,13 @@ class SaleViewModel(
 
         loadPendingSales()
 
-        uiState = uiState.copy(currentSale = updatedSale)
+        _uiState.value = _uiState.value.copy(currentSale = updatedSale)
 
         recalcTotals()
     }
 
     fun updateItemQuantity(productId: Long, newQuantity: Int) {
-        val sale = uiState.currentSale ?: return
+        val sale = _uiState.value.currentSale ?: return
 
         val updated = updateItemQuantityUseCase.execute(sale, productId, newQuantity)
 
@@ -127,13 +129,13 @@ class SaleViewModel(
 
         loadPendingSales()
 
-        uiState = uiState.copy(currentSale = updated)
+        _uiState.value = _uiState.value.copy(currentSale = updated)
 
         recalcTotals()
     }
 
     fun removeItem(productId: Long) {
-        val sale = uiState.currentSale ?: return
+        val sale = _uiState.value.currentSale ?: return
 
         removeItemFromSaleUseCase.execute(sale, productId)
 
@@ -145,13 +147,13 @@ class SaleViewModel(
         checkEmptyPendingSales()
         loadPendingSales()
 
-        uiState = uiState.copy(currentSale = updatedSale)
+        _uiState.value = _uiState.value.copy(currentSale = updatedSale)
 
         recalcTotals()
     }
 
     private fun checkEmptyPendingSales() {
-        val emptySales = uiState.pendingSales.filter { it.items.isEmpty() }
+        val emptySales = _uiState.value.pendingSales.filter { it.items.isEmpty() }
 
         if (emptySales.size > 1) {
             emptySales.drop(1).forEach { duplicate ->
@@ -161,11 +163,11 @@ class SaleViewModel(
     }
 
     private fun recalcTotals() {
-        val sale = uiState.currentSale ?: return
+        val sale = _uiState.value.currentSale ?: return
         val subtotal = calculateSubtotalUseCase.execute(sale.items)
         val total = calculateTotalUseCase.execute(subtotal)
 
-        uiState = uiState.copy(
+        _uiState.value = _uiState.value.copy(
             subtotal = subtotal,
             total = total
         )
@@ -173,10 +175,10 @@ class SaleViewModel(
     }
 
     fun saveSale() {
-        val sale = uiState.currentSale ?: return
+        val sale = _uiState.value.currentSale ?: return
         val saleToSave = sale.copy(
-            subtotal = uiState.subtotal,
-            total = uiState.total,
+            subtotal = _uiState.value.subtotal,
+            total = _uiState.value.total,
             status = SaleStatus.COMPLETED
         )
         // Guardar la venta completada
@@ -190,7 +192,7 @@ class SaleViewModel(
             newSale
         }
 
-        uiState = uiState.copy(
+        _uiState.value = _uiState.value.copy(
             currentSale = emptyPending,
             pendingSales = pending
         )
@@ -206,7 +208,7 @@ class SaleViewModel(
 
             loadPendingSales()
 
-            if (uiState.currentSale?.id == sale.id) {
+            if (_uiState.value.currentSale?.id == sale.id) {
                 startNewSale()
             }
         }
@@ -222,7 +224,7 @@ class SaleViewModel(
 
         loadPendingSales()
 
-        if (uiState.currentSale?.id == sale.id) {
+        if (_uiState.value.currentSale?.id == sale.id) {
             startNewSale()
         }
     }

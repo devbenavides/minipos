@@ -2,22 +2,15 @@ package co.com.computingsoftdev.minipos
 
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonShapes
-import androidx.compose.material3.IconToggleButtonShapes
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
-import co.com.computingsoftdev.minipos.data.datasource.local.SaleLocalDataSource
 import co.com.computingsoftdev.minipos.domain.model.Product
 import co.com.computingsoftdev.minipos.domain.usecase.reports.GetCompletedSalesReportUseCase
 import co.com.computingsoftdev.minipos.presentation.navigation.Screen
@@ -30,7 +23,8 @@ import co.com.computingsoftdev.minipos.presentation.sales.SaleScreen
 import co.com.computingsoftdev.minipos.presentation.sales.SaleViewModel
 import co.com.computingsoftdev.minipos.presentation.sales.sale_outcome.SaleOutcomeScreen
 import co.com.computingsoftdev.minipos.presentation.sales.sale_outcome.SaleOutcomeViewModel
-import org.jetbrains.compose.resources.painterResource
+import ui.icons.AppIcons
+import ui.navigation.NavBarIcon
 
 @Composable
 fun App(
@@ -108,25 +102,49 @@ fun AppBottomNavigation(
         NavigationBarItem(
             selected = currentScreen == Screen.Products,
             onClick = { onScreenSelected(Screen.Products) },
-            icon = {}, // vacío por ahora
+            icon = {
+                NavBarIcon(
+                    AppIcons.ListIcon,
+                    "Products",
+                    iconSize = 28.dp
+                )
+            }, // vacío por ahora
             label = { Text("Productos") }
         )
         NavigationBarItem(
             selected = currentScreen == Screen.Sale,
             onClick = { onScreenSelected(Screen.Sale) },
-            icon = {},
+            icon = {
+                NavBarIcon(
+                    AppIcons.ShoppingCartIcon,
+                    "Ventas",
+                    iconSize = 28.dp
+                )
+            },
             label = { Text("Ventas") }
         )
         NavigationBarItem(
             selected = currentScreen == Screen.SaleOutcome,
             onClick = { onScreenSelected(Screen.SaleOutcome) },
-            icon = {},
+            icon = {
+                NavBarIcon(
+                    AppIcons.CircleCheckIcon,
+                    "Finalizadas",
+                    iconSize = 28.dp
+                )
+            },
             label = { Text("Finalizadas") }
         )
         NavigationBarItem(
             selected = currentScreen == Screen.Reports,
             onClick = { onScreenSelected(Screen.Reports) },
-            icon = {},
+            icon = {
+                NavBarIcon(
+                    AppIcons.ChartBarIcon,
+                    "Reportes",
+                    iconSize = 28.dp
+                )
+            },
             label = { Text("Reportes") }
         )
     }
