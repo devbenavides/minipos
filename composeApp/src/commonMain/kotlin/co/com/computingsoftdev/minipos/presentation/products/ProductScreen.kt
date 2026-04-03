@@ -1,5 +1,6 @@
 package co.com.computingsoftdev.minipos.presentation.products
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.runtime.collectAsState
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -33,6 +35,7 @@ import co.com.computingsoftdev.minipos.domain.model.Product
 import co.com.computingsoftdev.minipos.domain.model.SaleItem
 import co.com.computingsoftdev.minipos.presentation.sales.SaleViewModel
 import org.jetbrains.compose.resources.painterResource
+import ui.buttons.IconButtonFilled
 import ui.icons.AppIcons
 import ui.navigation.NavBarIcon
 
@@ -56,18 +59,19 @@ fun ProductScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
 
-        // 👉 ESTE ES PARA IR AL FORM
+        //ESTE ES PARA IR AL FORM
         Button(
             onClick = onAddProductClick,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
+                .padding(8.dp),
+            shape = RoundedCornerShape(12.dp)
         ) {
-            NavBarIcon(
-                AppIcons.PlusIcon,
-                "Nuevo Producto",
-                iconSize = 28.dp,
-                iconColor = Color.White
+            Icon(
+                imageVector = AppIcons.PlusIcon, // tu icono de más
+                contentDescription = "Nuevo Producto",
+                modifier = Modifier.size(28.dp),
+                tint = Color.White
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text("Nuevo Producto")
@@ -130,77 +134,75 @@ fun ProductItem(
     onEdit: (Product) -> Unit,
     onDelete: (Long) -> Unit
 ) {
-    var showDescription by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface),
+            .padding(vertical = 4.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(12.dp)
+                .animateContentSize() // 🔥 animación suave
+        ) {
+
             Row(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = product.name, style = MaterialTheme.typography.titleMedium)
-                    Text(text = "Precio: ${product.price}", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = product.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1
+                    )
+
+                    Text(
+                        text = "Precio: ${product.price}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-                Row {
-                    /*Button(onClick = { onAddToSale(product) }) {
-                        NavBarIcon(
-                            AppIcons.PlusIcon,
-                            "Agregar",
-                            iconSize = 28.dp,
-                            iconColor = Color.Gray
-                        )
-                        Text("Agregar")
-                    }*/
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(40.dp)
+
+                // 🔹 Solo si tiene descripción
+                if (!product.description.isNullOrBlank()) {
+                    IconButton(
+                        onClick = { expanded = !expanded }
                     ) {
-                        IconButton(
-                            onClick = { showDescription = true },
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Icon(
-                                imageVector = AppIcons.InfoCircleIcon,
-                                contentDescription = "Ver descripción",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
+                        Icon(
+                            imageVector = if (expanded)
+                                AppIcons.ChevronUpIcon
+                            else
+                                AppIcons.ChevronDownIcon,
+                            contentDescription = "Descripción",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            // 🔹 Descripción expandible
+            if (expanded && !product.description.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = product.description ?: "",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             ProductCardButtons(
                 onEdit = { onEdit(product) },
                 onDelete = { onDelete(product.id) }
             )
         }
-    }
-
-    // Dialogo de descripción
-    if (showDescription) {
-        AlertDialog(
-            onDismissRequest = { showDescription = false },
-            title = { Text("Descripción") },
-            text = { Text(product.description ?: "Sin descripción") },
-            confirmButton = {
-                TextButton(onClick = { showDescription = false }) {
-                    Text("Cerrar")
-                }
-            }
-        )
     }
 }
 
@@ -214,14 +216,15 @@ fun ProductCardButtons(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // 🔹 Editar
+        //Editar
         Button(
             onClick = onEdit,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                 contentColor = MaterialTheme.colorScheme.primary
             ),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(12.dp)
         ) {
             Icon(
                 imageVector = AppIcons.PencilIcon,
@@ -232,14 +235,15 @@ fun ProductCardButtons(
             Text("Editar")
         }
 
-        // 🔹 Eliminar
+        //Eliminar
         Button(
             onClick = onDelete,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
                 contentColor = MaterialTheme.colorScheme.error
             ),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(12.dp)
         ) {
             Icon(
                 imageVector = AppIcons.TrashIcon,

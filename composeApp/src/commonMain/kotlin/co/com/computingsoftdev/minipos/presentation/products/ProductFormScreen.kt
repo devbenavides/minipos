@@ -110,17 +110,7 @@ fun ProductFormScreen(
 
             )
 
-            /*{
-                NavBarIcon(
-                    if (product == null) AppIcons.FloppyIcon else AppIcons.InfoCircleIcon,
-                    contentDescription = if (product == null) "Guardar" else "Actualizar",
-
-                    iconColor = Color.White
-                )
-            }*/
-
-
-            // 🔹 Cancelar
+            //Cancelar
             IconButtonFilled(
                 onClick = { onBack() },
                 icon = AppIcons.XIcon,

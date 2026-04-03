@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,20 +49,32 @@ fun SaleOutcomeScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         // 🔹 Filtros
-        Row (
+        Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Button(onClick = { saleOutcomeViewModel.applyFilter(null) }) {
-                Text("Todos")
-            }
-            Button(onClick = { saleOutcomeViewModel.applyFilter(SaleStatus.COMPLETED) }) {
-                Text("Completadas")
-            }
-            Button(onClick = { saleOutcomeViewModel.applyFilter(SaleStatus.CANCELLED) }) {
-                Text("Canceladas")
-            }
+            // Todos
+            FilterChip(
+                selected = saleOutcomeViewModel.completedFilter == null,
+                onClick = { saleOutcomeViewModel.applyFilter(null) },
+                label = { Text("Todos") }
+            )
+
+            // Completadas
+            FilterChip(
+                selected = saleOutcomeViewModel.completedFilter == SaleStatus.COMPLETED,
+                onClick = { saleOutcomeViewModel.applyFilter(SaleStatus.COMPLETED) },
+                label = { Text("Completadas") }
+            )
+
+            // Canceladas
+            FilterChip(
+                selected = saleOutcomeViewModel.completedFilter == SaleStatus.CANCELLED,
+                onClick = { saleOutcomeViewModel.applyFilter(SaleStatus.CANCELLED) },
+                label = { Text("Canceladas") }
+            )
         }
+
 
         Spacer(modifier = Modifier.height(12.dp))
 
